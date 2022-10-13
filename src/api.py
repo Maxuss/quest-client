@@ -9,6 +9,10 @@ class RegStageUser:
     card_hash: str
     id: UUID
 
+    def __init__(self, card_hash: str, id: UUID):
+        self.card_hash = card_hash
+        self.id = id
+
 @dataclass
 class UserData:
     """Все данные одного пользователя"""
@@ -49,3 +53,15 @@ class Controller():
         if not resp['success']:
             return None
         return UserData(resp['card_hash'], UUID(resp['id']), resp['username'], resp['telegram_chat_id'])
+
+    def register(self, user_hash: str) -> RegStageUser:
+        """
+        Начинает процесс регистрации для пользователя с предоставленным хэшем 
+
+        @param user_hash: SHA256 хэш данных карты пользователя
+        """
+        resp = requests.post(f"{self.url}/user/register", json={'card_hash': user_hash}, headers=self.default_headers).json()
+        if not resp['success']:
+            return None
+        return RegStageUser(resp['card_hash'], UUID(resp['id']))
+
