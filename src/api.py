@@ -1,7 +1,8 @@
 from mimetypes import init
-import requests;
+import requests
 from dataclasses import dataclass
 from uuid import UUID
+
 
 @dataclass
 class RegStageUser:
@@ -12,6 +13,7 @@ class RegStageUser:
     def __init__(self, card_hash: str, id: UUID):
         self.card_hash = card_hash
         self.id = id
+
 
 @dataclass
 class UserData:
@@ -27,6 +29,7 @@ class UserData:
         self.username = username
         self.telegram_chat_id = telegram_chat_id
 
+
 class Controller():
     def __init__(self, url: str):
         """
@@ -40,7 +43,7 @@ class Controller():
             'User-Agent': 'Quest-Client/0.1.0',
             'ngrok-skip-browser-warning': 'letmein'
         }
-    
+
     def user_data(self, user_hash: str) -> UserData:
         """
         Пытается получить доступ к данным пользователя.
@@ -49,7 +52,8 @@ class Controller():
 
         @param user_hash: SHA256 хэш данных пользователя
         """
-        resp = requests.get(f"{self.url}/user/get/{user_hash}", headers=self.default_headers).json()
+        resp = requests.get(f"{self.url}/user/get/{user_hash}",
+                            headers=self.default_headers).json()
         if not resp['success']:
             return None
         return UserData(resp['card_hash'], UUID(resp['id']), resp['username'], resp['telegram_chat_id'])
@@ -60,8 +64,21 @@ class Controller():
 
         @param user_hash: SHA256 хэш данных карты пользователя
         """
-        resp = requests.post(f"{self.url}/user/register", json={'card_hash': user_hash}, headers=self.default_headers).json()
+        resp = requests.post(f"{self.url}/user/register",
+                             json={'card_hash': user_hash}, headers=self.default_headers).json()
         if not resp['success']:
             return None
         return RegStageUser(resp['card_hash'], UUID(resp['id']))
 
+    def avatar(self, user_id: UUID, output_file: str):
+        """
+        Скачивает аватар пользователя
+
+        @param user_id: UUID пользователя
+        @param output_file: Путь к файлу на который будет записан PNG аватар
+        """
+        resp = requests.get(
+            f'{self.url}/user/avatar/{user_id}', headers=self.default_headers, stream=True)
+        with open(output_file, "wb") as file:
+            for chunk in resp.iter_content(chunk_size=8912):
+                file.write(chunk)
